@@ -1,7 +1,7 @@
 #ifndef BANK_H
 #define BANK_H
 
-#define _GNU_SOURCE
+#define _POSIX_C_SOURCE 200809L
 #include <pthread.h>
 #define MAX_ACCOUNTS 100
 

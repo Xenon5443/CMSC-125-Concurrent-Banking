@@ -1,8 +1,6 @@
-
 #include <stdbool.h>
 #include "bank.h"
 
-// #include <pthread.h>
 bank = {0};
 
 int get_balance(int account_id) {
@@ -66,4 +64,3 @@ bool transfer(int from_id, int to_id, int amount_centavos) {
     pthread_rwlock_unlock(&acc_first->lock);
     return true;
 }
-
