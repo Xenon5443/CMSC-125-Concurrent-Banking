@@ -3,6 +3,7 @@
 #include "bank.h"
 
 // #include <pthread.h>
+bank = {0};
 
 int get_balance(int account_id) {
     Account* acc = &bank.accounts[account_id];

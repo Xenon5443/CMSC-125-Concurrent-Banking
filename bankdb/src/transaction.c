@@ -1,6 +1,8 @@
 #include <pthread.h>
 #include "transaction.h"
 
+#include "timer.h"
+
 void* execute_transaction(void* arg) {
     Transaction* tx = (Transaction*)arg;
     

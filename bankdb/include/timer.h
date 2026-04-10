@@ -4,6 +4,8 @@
 #include <unistd.h>
 #include <pthread.h>
 
+int global_tick;
+
 // Global simulation clock (shared by all threads)
 volatile int global_tick = 0;
 pthread_mutex_t tick_lock;

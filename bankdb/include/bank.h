@@ -1,6 +1,7 @@
 #ifndef BANK_H
 #define BANK_H
 
+#define _GNU_SOURCE
 #include <pthread.h>
 #define MAX_ACCOUNTS 100
 
@@ -16,4 +17,5 @@ typedef struct {
     pthread_mutex_t bank_lock;  // Protects bank metadata
 } Bank;
 
+Bank bank;
 #endif
