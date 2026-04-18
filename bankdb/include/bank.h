@@ -17,5 +17,5 @@ typedef struct {
     pthread_mutex_t bank_lock;  // Protects bank metadata
 } Bank;
 
-Bank bank;
+extern Bank bank;
 #endif
