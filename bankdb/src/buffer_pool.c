@@ -7,6 +7,12 @@
 
 #define BUFFER_POOL_SIZE 5
 
+void init_buffer_pool(BufferPool* pool) {
+    sem_init(&pool->empty_slots, 0, BUFFER_POOL_SIZE);
+    sem_init(&pool->full_slots, 0, 0);
+    pthread_mutex_init(&pool->pool_lock, NULL);
+}
+
 // Load account into buffer pool (producer)
 void load_account(BufferPool* pool, int account_id) {
     sem_wait(&pool->empty_slots);  // Wait for empty slot
