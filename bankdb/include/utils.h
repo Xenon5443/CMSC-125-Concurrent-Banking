@@ -4,6 +4,18 @@
 #include "bank.h"
 #include "transaction.h"
 
+//declared struct for convenience of passing parameters and to avoid working with pointers
+typedef struct {
+    char *accounts_file;
+    char *trace_file;
+    char *deadlock_strategy;
+    int tick_ms;
+    int verbose;
+} Config;
+
+// func prototype for parsing input from the command line
+void parse_cli_arguments(int argc, char *argv[], Config *config);
+
 
 /**
  * Parses the accounts file and returns a Bank struct.
