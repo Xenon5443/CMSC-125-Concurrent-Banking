@@ -1,15 +1,18 @@
 #ifndef TIMER_H
 #define TIMER_H
 
-#include <unistd.h>
-#include <pthread.h>
 #include <stdbool.h>
+#include <pthread.h> // Necessary for mutex and cond types
 
-volatile int global_tick;
-int TICK_INTERVAL_MS = 100; // To be changed depending on the parsed input
-bool simulation_running = true;
+extern volatile int global_tick;
+extern int TICK_INTERVAL_MS;
+extern bool simulation_running;
 
-void* timer_thread(void* arg);
+// Add these two lines:
+extern pthread_mutex_t tick_lock;
+extern pthread_cond_t tick_changed;
+
+void* timer_thread();
 void wait_until_tick(int target_tick);
 
 #endif

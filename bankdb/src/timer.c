@@ -1,11 +1,13 @@
 #include "timer.h"
+#include <unistd.h>
 
-global_tick = 0;
+volatile int global_tick = 0;
 pthread_mutex_t tick_lock;
 pthread_cond_t tick_changed;
+int TICK_INTERVAL_MS = 100; 
 
 // Timer thread increments clock every TICK_INTERVAL_MS
-void* timer_thread(void* arg) {
+void* timer_thread() {
     while (simulation_running) {
         pthread_mutex_lock(&tick_lock);
         usleep(TICK_INTERVAL_MS * 1000);  // Sleep to simulate a tick
