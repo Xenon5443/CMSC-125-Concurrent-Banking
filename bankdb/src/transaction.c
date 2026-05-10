@@ -1,6 +1,7 @@
 #include <pthread.h>
 #include "transaction.h"
 #include "timer.h"
+#include "buffer_pool.h"
 
 #include "bank.h" 
 #include <stdio.h>
@@ -12,9 +13,23 @@ void* execute_transaction(void* arg) {
     wait_until_tick(tx->start_tick);
     
     tx->actual_start = global_tick;
+    tx->wait_ticks += (tx->actual_start - tx->start_tick);
     
     for (int i = 0; i < tx->num_ops; i++) {
         Operation* op = &tx->ops[i];
+
+        int first;
+        int second;
+
+        if(op->type == OP_TRANSFER){
+            first = (op->account_id < op->target_account) ? op->account_id : op->target_account;
+            second = (op->account_id < op->target_account) ? op->target_account : op->account_id;
+
+            load_account(&pool, first);
+            load_account(&pool, second);
+        }else{
+            load_account(&pool, op->account_id);
+        }
         
         int tick_before = global_tick;
         
@@ -45,6 +60,14 @@ void* execute_transaction(void* arg) {
                        tx->tx_id, op->account_id, 
                        balance / 100, balance % 100);
                 break;
+        }
+
+        if(op->type == OP_TRANSFER){
+
+            unload_account(&pool, first);
+            unload_account(&pool, second);
+        }else{
+            unload_account(&pool, op->account_id);
         }
         
         tx->wait_ticks += (global_tick - tick_before);
