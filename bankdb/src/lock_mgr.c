@@ -1,4 +1,5 @@
 #include "bank.h"
+#include "lock_mgr.h"
 
 void lock_rw(Account* acc_first, Account* acc_second) {
     pthread_rwlock_wrlock(&acc_first->lock);
