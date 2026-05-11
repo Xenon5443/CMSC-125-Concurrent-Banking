@@ -1,6 +1,7 @@
 #ifndef UTILS_H
 #define UTILS_H
 
+#include <stdbool.h>
 #include "bank.h"
 #include "transaction.h"
 
@@ -18,16 +19,15 @@ void parse_cli_arguments(int argc, char *argv[], Config *config);
 
 
 /**
- * Parses the accounts file and returns a Bank struct.
- * Note: This returns by value, creating a copy in the caller's scope.
+ * Parses the accounts file 
  */
-Bank parse_accounts(const char* filename);
+void parse_accounts(const char* filename);
 
 /**
  * Parses the transaction trace file and returns a pointer to 
  * a heap-allocated array of Transaction structs.
  * returned pointer to avoid memory leaks.
  */
-Transaction* parse_transactions(const char* filename);
+Transaction* parse_transactions(const char* filename, int *num_transactions);
 
 #endif 

@@ -43,18 +43,13 @@ void parse_cli_arguments(int argc, char *argv[], Config *config) {
         fprintf(stderr, "Error: Missing required arguments.\n");
         exit(EXIT_FAILURE);
     }
-
-    //extra testing by printing contents of config
-     printf("Config: \nAccounts=%s, \nTrace=%s, \nDeadlock=%s, \nTicks=%dms\n",
-           config->accounts_file, config->trace_file, config->deadlock_strategy, config->tick_ms);
 }
 
 
 
 // fucntion to Parse Accounts
-Bank parse_accounts(const char* filename) {
-    Bank local_bank; // Renamed to local_bank to avoid confusion
-    local_bank.num_accounts = 0;
+void parse_accounts(const char* filename) { 
+    bank.num_accounts = 0;
 
     FILE* file = fopen(filename, "r");
     if (!file) {
@@ -68,27 +63,29 @@ Bank parse_accounts(const char* filename) {
     while (fgets(line, sizeof(line), file)) {
         if (line[0] == '#' || line[0] == '\n' || line[0] == '\r') continue;
 
-        Account* acc = &local_bank.accounts[local_bank.num_accounts];
-        if (sscanf(line, "%d %d", &acc->account_id, &acc->balance_centavos) == 2) {
-            pthread_rwlock_init(&acc->lock, NULL);
-            local_bank.num_accounts++;
+        int temp_id, temp_balance;
+        // 1. Parse into temporary variables first to validate the ID
+        if (sscanf(line, "%d %d", &temp_id, &temp_balance) == 2) {
+            
+            // 2. Safety Check: Ensure the ID fits in your array bounds (0-99)
+            if (temp_id >= 0 && temp_id < MAX_ACCOUNTS) {
+                
+                // 3. Use temp_id as the direct index
+                Account* acc = &bank.accounts[temp_id];
+                
+                acc->account_id = temp_id;
+                acc->balance_centavos = temp_balance;
+                pthread_rwlock_init(&acc->lock, NULL);
+                
+                // Keep track of how many unique accounts we've actually loaded
+                bank.num_accounts++;
+            } else {
+                fprintf(stderr, "Warning: Account ID %d out of bounds (Max: %d)\n", 
+                        temp_id, MAX_ACCOUNTS - 1);
+            }
         }
     }
     fclose(file);
-
-    //The print statements below are for confirming if parsing is correct
-    printf("\n--- BANK CONTENTS ---\n");
-    printf("Number of accounts: %d\n", local_bank.num_accounts);
-
-    for (int i = 0; i < local_bank.num_accounts; i++) {
-        printf("Account[%d]: ID=%d Balance=%d centavos\n",
-            i,
-            local_bank.accounts[i].account_id,
-            local_bank.accounts[i].balance_centavos);
-    }
-
-
-    return local_bank; 
 }
 
 
@@ -102,9 +99,9 @@ int find_tx_idx(Transaction* array, int id, int count) {
 }
 
 // function for Parsing Transactions
-Transaction* parse_transactions(const char* filename) {
+Transaction* parse_transactions(const char* filename, int *num_transactions) {
     
-    int num_transactions = 0;
+    // int num_transactions = 0;
 
     // allocate memory for tx_array
     Transaction* tx_array = malloc(sizeof(Transaction) * 1000);
@@ -121,7 +118,6 @@ Transaction* parse_transactions(const char* filename) {
     }
 
     char line[256];
-    num_transactions = 0; 
     fgets(line, sizeof(line), file); 
 
     while (fgets(line, sizeof(line), file)) {
@@ -133,10 +129,10 @@ Transaction* parse_transactions(const char* filename) {
         if (sscanf(line, "%s %d %s %d", tx_label, &start_tick, op_label, &account_id) < 4) continue;
 
         int id_num = atoi(&tx_label[1]); 
-        int idx = find_tx_idx(tx_array, id_num, num_transactions);
+        int idx = find_tx_idx(tx_array, id_num, *num_transactions);
 
         if (idx == -1) {
-            idx = num_transactions++;
+            idx = (*num_transactions)++;
             tx_array[idx].tx_id = id_num;
             tx_array[idx].start_tick = start_tick;
             tx_array[idx].num_ops = 0;
@@ -162,43 +158,6 @@ Transaction* parse_transactions(const char* filename) {
     }
     fclose(file);
 
-
-    //The print statements below are for viewing the contents of tx_array to confirm if parsing is correct
-    printf("\n========================================\n");
-    printf("PARSED TRANSACTIONS (%d total)\n", num_transactions);
-    printf("========================================\n");
-
-    for (int i = 0; i < num_transactions; i++) {
-        Transaction *tx = &tx_array[i];
-        printf("Transaction T%d [Start Tick: %d, Ops: %d]\n", 
-               tx->tx_id, tx->start_tick, tx->num_ops);
-
-        for (int j = 0; j < tx->num_ops; j++) {
-            Operation *op = &tx->ops[j];
-            printf("  Op %d: ", j);
-
-            switch (op->type) {
-                case OP_DEPOSIT:
-                    printf("DEPOSIT | Acc: %d | Amount: %d\n", 
-                           op->account_id, op->amount_centavos);
-                    break;
-                case OP_WITHDRAW:
-                    printf("WITHDRAW | Acc: %d | Amount: %d\n", 
-                           op->account_id, op->amount_centavos);
-                    break;
-                case OP_TRANSFER:
-                    printf("TRANSFER | From: %d | To: %d | Amount: %d\n", 
-                           op->account_id, op->target_account, op->amount_centavos);
-                    break;
-                case OP_BALANCE:
-                    printf("BALANCE  | Acc: %d\n", op->account_id);
-                    break;
-                default:
-                    printf("UNKNOWN TYPE\n");
-            }
-        }
-        printf("----------------------------------------\n");
-    }
 
     return tx_array; 
 }
