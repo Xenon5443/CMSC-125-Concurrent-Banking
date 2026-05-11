@@ -1,7 +1,6 @@
 # CMSC 125 Lab 3 - Concurrent Banking System
 # Makefile
 
-
 # ----------------------------------------------------------
 # Compiler
 # ----------------------------------------------------------
@@ -10,68 +9,63 @@ CC = gcc
 # ----------------------------------------------------------
 # Directories
 # ----------------------------------------------------------
-SRC_DIR = src
-INC_DIR = include
-OBJ_DIR = obj
-BIN_DIR = bin
-TEST_DIR = tests
+SRC_DIR   = src
+INC_DIR   = include
+OBJ_DIR   = obj
+DOBJ_DIR  = obj_debug
+BIN_DIR   = bin
+TEST_DIR  = tests
 
 # ----------------------------------------------------------
-# Executable Name
+# Executable Names
 # ----------------------------------------------------------
-TARGET = $(BIN_DIR)/bankdb
+TARGET       = $(BIN_DIR)/bankdb
+DEBUG_TARGET = $(BIN_DIR)/bankdb_debug
 
 # ----------------------------------------------------------
-# Source Files
+# Source / Object Files
 # ----------------------------------------------------------
 SRCS = $(wildcard $(SRC_DIR)/*.c)
 
-# Convert src/file.c -> obj/file.o
+# Production objects  -> obj/
 OBJS = $(patsubst $(SRC_DIR)/%.c,$(OBJ_DIR)/%.o,$(SRCS))
+
+# Debug objects       -> obj_debug/   (kept separate to avoid contamination)
+DOBJS = $(patsubst $(SRC_DIR)/%.c,$(DOBJ_DIR)/%.o,$(SRCS))
 
 # ----------------------------------------------------------
 # Compiler Flags
 # ----------------------------------------------------------
 COMMON_FLAGS = -I$(INC_DIR) -pthread -Wall -Wextra
 
-# Production Build
-CFLAGS = $(COMMON_FLAGS) -O2
-
-# Debug Build + ThreadSanitizer
-DEBUG_FLAGS = $(COMMON_FLAGS) -g -fsanitize=thread
+CFLAGS       = $(COMMON_FLAGS) -O2
+DEBUG_FLAGS  = $(COMMON_FLAGS) -g -fsanitize=thread -fno-omit-frame-pointer
 
 # ----------------------------------------------------------
-# Default Target
+# Default Target: production build only, no TSan
 # ----------------------------------------------------------
 all: $(TARGET)
 
-# ----------------------------------------------------------
-# Link Object Files
-# ----------------------------------------------------------
 $(TARGET): $(OBJS)
 	@mkdir -p $(BIN_DIR)
 	$(CC) $(CFLAGS) $^ -o $@
 
-# ----------------------------------------------------------
-# Compile Source Files
-# ----------------------------------------------------------
 $(OBJ_DIR)/%.o: $(SRC_DIR)/%.c
 	@mkdir -p $(OBJ_DIR)
 	$(CC) $(CFLAGS) -c $< -o $@
 
 # ----------------------------------------------------------
-# Debug Build
+# Debug / TSan build -> separate binary AND separate obj dir
 # ----------------------------------------------------------
-debug: clean
-	@mkdir -p $(OBJ_DIR)
+debug: $(DEBUG_TARGET)
+
+$(DEBUG_TARGET): $(DOBJS)
 	@mkdir -p $(BIN_DIR)
+	$(CC) $(DEBUG_FLAGS) $^ -o $@
 
-	@for file in $(SRCS); do \
-		obj="$(OBJ_DIR)/$$(basename $$file .c).o"; \
-		$(CC) $(DEBUG_FLAGS) -c $$file -o $$obj; \
-	done
-
-	$(CC) $(DEBUG_FLAGS) $(OBJS) -o $(TARGET)
+$(DOBJ_DIR)/%.o: $(SRC_DIR)/%.c
+	@mkdir -p $(DOBJ_DIR)
+	$(CC) $(DEBUG_FLAGS) -c $< -o $@
 
 # ----------------------------------------------------------
 # Run Program
@@ -80,12 +74,9 @@ run: all
 	./$(TARGET)
 
 # ==========================================================
-# INDIVIDUAL TEST CASES
+# INDIVIDUAL TEST CASES  (all use production binary)
 # ==========================================================
 
-# ----------------------------------------------------------
-# Test 1: Simple Sequential Operations
-# ----------------------------------------------------------
 test1: all
 	@echo "========================================="
 	@echo "Running Test 1: Simple Transactions"
@@ -95,9 +86,6 @@ test1: all
 		--trace=$(TEST_DIR)/trace_simple.txt \
 		--deadlock=prevention
 
-# ----------------------------------------------------------
-# Test 2: Concurrent Readers
-# ----------------------------------------------------------
 test2: all
 	@echo "========================================="
 	@echo "Running Test 2: Concurrent Readers"
@@ -107,9 +95,6 @@ test2: all
 		--trace=$(TEST_DIR)/trace_readers.txt \
 		--deadlock=prevention
 
-# ----------------------------------------------------------
-# Test 3: Deadlock Scenario
-# ----------------------------------------------------------
 test3: all
 	@echo "========================================="
 	@echo "Running Test 3: Deadlock Scenario"
@@ -117,12 +102,8 @@ test3: all
 	./$(TARGET) \
 		--accounts=$(TEST_DIR)/accounts.txt \
 		--trace=$(TEST_DIR)/trace_deadlock.txt \
-		--deadlock=prevention \
-		--verbose
+		--deadlock=prevention
 
-# ----------------------------------------------------------
-# Test 4: Insufficient Funds
-# ----------------------------------------------------------
 test4: all
 	@echo "========================================="
 	@echo "Running Test 4: Insufficient Funds"
@@ -132,9 +113,6 @@ test4: all
 		--trace=$(TEST_DIR)/trace_abort.txt \
 		--deadlock=prevention
 
-# ----------------------------------------------------------
-# Test 5: Buffer Pool Saturation
-# ----------------------------------------------------------
 test5: all
 	@echo "========================================="
 	@echo "Running Test 5: Buffer Pool Saturation"
@@ -142,37 +120,39 @@ test5: all
 	./$(TARGET) \
 		--accounts=$(TEST_DIR)/accounts.txt \
 		--trace=$(TEST_DIR)/trace_buffer.txt \
-		--deadlock=prevention \
-		--verbose
+		--deadlock=prevention
 
-# ==========================================================
-# RUN ALL TESTS
-# ==========================================================
-test: test1 test2 test3 test4 test5
+test6: all
+	@echo "========================================="
+	@echo "Running Test 6"
+	@echo "========================================="
+	./$(TARGET) \
+		--accounts=$(TEST_DIR)/accounts.txt \
+		--trace=$(TEST_DIR)/trace_standard.txt \
+		--deadlock=prevention
+
+test: test1 test2 test3 test4 test5 test6
 
 # ----------------------------------------------------------
-# ThreadSanitizer Test
+# ThreadSanitizer test  (uses debug binary explicitly)
 # ----------------------------------------------------------
 tsan: debug
-	./$(TARGET) \
+	@echo "========================================="
+	@echo "Running TSan: Concurrent Readers"
+	@echo "========================================="
+	setarch -R $(DEBUG_TARGET) \
 		--accounts=$(TEST_DIR)/accounts.txt \
 		--trace=$(TEST_DIR)/trace_readers.txt \
 		--deadlock=prevention
 
 # ----------------------------------------------------------
-# Clean Build Files
+# Clean
 # ----------------------------------------------------------
 clean:
-	rm -rf $(OBJ_DIR) $(BIN_DIR)
+	rm -rf $(OBJ_DIR) $(DOBJ_DIR) $(BIN_DIR)
 
-# ----------------------------------------------------------
-# Full Rebuild
-# ----------------------------------------------------------
 rebuild: clean all
 
-# ----------------------------------------------------------
-# Phony Targets
-# ----------------------------------------------------------
 .PHONY: all debug run \
-	test test1 test2 test3 test4 test5 \
+	test test1 test2 test3 test4 test5 test6 \
 	tsan clean rebuild
