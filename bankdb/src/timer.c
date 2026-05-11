@@ -1,5 +1,6 @@
 #include "timer.h"
 #include <unistd.h>
+#include <stdio.h>
 
 volatile int global_tick = 0;
 pthread_mutex_t tick_lock;
@@ -8,10 +9,18 @@ int TICK_INTERVAL_MS = 100;
 
 // Timer thread increments clock every TICK_INTERVAL_MS
 void* timer_thread() {
+
+    // Right before the while loop starts
+    printf("\n=== Banking System Execution Log ===\nTimer thread started (tick interval: %dms)\n\nTick 0:\n", TICK_INTERVAL_MS);
+
     while (simulation_running) {
-        pthread_mutex_lock(&tick_lock);
         usleep(TICK_INTERVAL_MS * 1000);  // Sleep to simulate a tick
+        pthread_mutex_lock(&tick_lock);
         global_tick++;
+
+        // Inside the while loop, right after global_tick++
+        printf("\nTick %d:\n", global_tick);
+
         pthread_cond_broadcast(&tick_changed);  // Wake waiting
         pthread_mutex_unlock(&tick_lock);
     }
