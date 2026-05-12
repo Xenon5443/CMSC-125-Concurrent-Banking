@@ -7,17 +7,14 @@
 #include "utils.h"
 #include "timer.h"
 #include "simulation.h"
+#include "buffer_pool.h"
+#include "metrics.h"
 
-
-int TICK_INTERVAL_MS = 100; 
 bool simulation_running = true;
 
 int main(int argc, char *argv[]) {
     //declared struct for convenience of passing parameters and to avoid working with pointers
     Config config; 
-
-    char accounts_full_path[512];
-    char trace_full_path[512];
     
     // Pass by pointer so the function can modify the 'config' variable
     parse_cli_arguments(argc, argv, &config);
@@ -32,6 +29,9 @@ int main(int argc, char *argv[]) {
     // 2. Initialize Synchronization Tools
     pthread_mutex_init(&tick_lock, NULL);
     pthread_cond_init(&tick_changed, NULL);
+
+    init_buffer_pool(&pool);
+    init_pool_metrics(); //pool metrics structure
     
     // 3. Launch the Timer in its OWN thread
     pthread_t timer_tid;
@@ -45,7 +45,10 @@ int main(int argc, char *argv[]) {
     simulation_running = false; // Tell the timer loop to stop
     pthread_join(timer_tid, NULL); // Wait for timer thread to finish
 
-
+    // to show info after pthread join for all worker threads
+    print_simulation_summary(num_tx, my_transactions);
+    print_performance_metrics(num_tx, my_transactions); //printing metrics
+    print_buffer_pool_report();
 
     free(my_transactions);
 
