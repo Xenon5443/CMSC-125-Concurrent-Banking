@@ -2,6 +2,7 @@
 #define BUFFER_POOL_H
 
 #include "bank.h"
+#include "transaction.h"
 #include <semaphore.h>
 
 #define BUFFER_POOL_SIZE 5
@@ -19,6 +20,21 @@ typedef struct {
     pthread_mutex_t pool_lock;
 } BufferPool;
 
+typedef struct {
+    int total_load;
+    int peak_load;
+    int total_unload;
+    int total_blocked_operations;
+    int active_load; // Needed for calculating peak_load accurately
+    pthread_mutex_t lock; // Dedicated lock for metrics
+} PoolMetrics;
+
+extern BufferPool pool;
+extern PoolMetrics pool_metrics;
+
 void init_buffer_pool(BufferPool* pool);
+void init_pool_metrics();
+void load_account(BufferPool* pool, int account_id);
+void unload_account(BufferPool* pool, int account_id);
 
 #endif
