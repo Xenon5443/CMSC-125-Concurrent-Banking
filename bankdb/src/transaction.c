@@ -34,6 +34,8 @@ void* execute_transaction(void* arg) {
         // }
         
         int tick_before = global_tick;
+
+        tx->actual_end = global_tick;
         
         switch (op->type) {
             case OP_DEPOSIT:
