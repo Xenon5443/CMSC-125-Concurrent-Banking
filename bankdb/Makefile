@@ -22,6 +22,12 @@ TEST_DIR  = tests
 TARGET       = $(BIN_DIR)/bankdb
 DEBUG_TARGET = $(BIN_DIR)/bankdb_debug
 
+
+# ----------------------------------------------------------
+# Test Configuration
+# ----------------------------------------------------------
+TICK_MS = 100
+
 # ----------------------------------------------------------
 # Source / Object Files
 # ----------------------------------------------------------
@@ -84,7 +90,8 @@ test1: all
 	./$(TARGET) \
 		--accounts=$(TEST_DIR)/accounts.txt \
 		--trace=$(TEST_DIR)/trace_simple.txt \
-		--deadlock=prevention
+		--deadlock=prevention \
+		--tick-ms=$(TICK_MS)
 
 test2: all
 	@echo "========================================="
@@ -93,7 +100,8 @@ test2: all
 	./$(TARGET) \
 		--accounts=$(TEST_DIR)/accounts.txt \
 		--trace=$(TEST_DIR)/trace_readers.txt \
-		--deadlock=prevention
+		--deadlock=prevention \
+		--tick-ms=$(TICK_MS)
 
 test3: all
 	@echo "========================================="
@@ -102,7 +110,8 @@ test3: all
 	./$(TARGET) \
 		--accounts=$(TEST_DIR)/accounts.txt \
 		--trace=$(TEST_DIR)/trace_deadlock.txt \
-		--deadlock=prevention
+		--deadlock=prevention \
+		--tick-ms=$(TICK_MS)
 
 test4: all
 	@echo "========================================="
@@ -111,7 +120,8 @@ test4: all
 	./$(TARGET) \
 		--accounts=$(TEST_DIR)/accounts.txt \
 		--trace=$(TEST_DIR)/trace_abort.txt \
-		--deadlock=prevention
+		--deadlock=prevention \
+		--tick-ms=$(TICK_MS)
 
 test5: all
 	@echo "========================================="
@@ -120,7 +130,8 @@ test5: all
 	./$(TARGET) \
 		--accounts=$(TEST_DIR)/accounts.txt \
 		--trace=$(TEST_DIR)/trace_buffer.txt \
-		--deadlock=prevention
+		--deadlock=prevention \
+		--tick-ms=$(TICK_MS)
 
 test6: all
 	@echo "========================================="
@@ -129,21 +140,92 @@ test6: all
 	./$(TARGET) \
 		--accounts=$(TEST_DIR)/accounts.txt \
 		--trace=$(TEST_DIR)/trace_standard.txt \
-		--deadlock=prevention
+		--deadlock=prevention \
+		--tick-ms=$(TICK_MS)
 
 test: test1 test2 test3 test4 test5 test6
 
 # ----------------------------------------------------------
 # ThreadSanitizer test  (uses debug binary explicitly)
 # ----------------------------------------------------------
+# tsan: debug
+# 	@echo "========================================="
+# 	@echo "Running TSan: Concurrent Readers"
+# 	@echo "========================================="
+# 	setarch -R $(DEBUG_TARGET) \
+# 		--accounts=$(TEST_DIR)/accounts.txt \
+# 		--trace=$(TEST_DIR)/trace_readers.txt \
+# 		--deadlock=prevention \
+# 		--tick-ms=$(TICK_MS)
+
+# ----------------------------------------------------------
+# ThreadSanitizer Tests (uses debug binary, all trace files)
+# ----------------------------------------------------------
 tsan: debug
 	@echo "========================================="
-	@echo "Running TSan: Concurrent Readers"
+	@echo "TSan Test 1: Simple Transactions"
+	@echo "========================================="
+	setarch -R $(DEBUG_TARGET) \
+		--accounts=$(TEST_DIR)/accounts.txt \
+		--trace=$(TEST_DIR)/trace_simple.txt \
+		--deadlock=prevention \
+		--tick-ms=$(TICK_MS) \
+		--verbose 2>&1
+
+	@echo "========================================="
+	@echo "TSan Test 2: Concurrent Readers"
 	@echo "========================================="
 	setarch -R $(DEBUG_TARGET) \
 		--accounts=$(TEST_DIR)/accounts.txt \
 		--trace=$(TEST_DIR)/trace_readers.txt \
-		--deadlock=prevention
+		--deadlock=prevention \
+		--tick-ms=$(TICK_MS) \
+		--verbose 2>&1
+
+	@echo "========================================="
+	@echo "TSan Test 3: Deadlock Scenario"
+	@echo "========================================="
+	setarch -R $(DEBUG_TARGET) \
+		--accounts=$(TEST_DIR)/accounts.txt \
+		--trace=$(TEST_DIR)/trace_deadlock.txt \
+		--deadlock=prevention \
+		--tick-ms=$(TICK_MS) \
+		--verbose 2>&1
+
+	@echo "========================================="
+	@echo "TSan Test 4: Insufficient Funds"
+	@echo "========================================="
+	setarch -R $(DEBUG_TARGET) \
+		--accounts=$(TEST_DIR)/accounts.txt \
+		--trace=$(TEST_DIR)/trace_abort.txt \
+		--deadlock=prevention \
+		--tick-ms=$(TICK_MS) \
+		--verbose 2>&1
+
+	@echo "========================================="
+	@echo "TSan Test 5: Buffer Pool Saturation"
+	@echo "========================================="
+	setarch -R $(DEBUG_TARGET) \
+		--accounts=$(TEST_DIR)/accounts.txt \
+		--trace=$(TEST_DIR)/trace_buffer.txt \
+		--deadlock=prevention \
+		--tick-ms=$(TICK_MS) \
+		--verbose 2>&1
+
+	@echo "========================================="
+	@echo "TSan Test 6: Standard"
+	@echo "========================================="
+	setarch -R $(DEBUG_TARGET) \
+		--accounts=$(TEST_DIR)/accounts.txt \
+		--trace=$(TEST_DIR)/trace_standard.txt \
+		--deadlock=prevention \
+		--tick-ms=$(TICK_MS) \
+		--verbose 2>&1
+
+	@echo "========================================="
+	@echo "TSan complete. Check output above for"
+	@echo "WARNING: DATA RACE lines. Zero = passing."
+	@echo "========================================="
 
 # ----------------------------------------------------------
 # Clean
