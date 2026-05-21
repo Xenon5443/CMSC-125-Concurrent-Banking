@@ -21,17 +21,15 @@ void print_simulation_summary(int num_tx, Transaction* transactions) {
     printf("Total transactions: %d\n", num_tx);
     printf("Committed: %d\n", committed);
     printf("Aborted: %d\n", aborted);
-    printf("Total ticks: %d\n", global_tick);
-    
-    // Hard-coded as 0 per requirement. 
-    // In a TSan-enabled build, any value more than 0 would likely 
-    // cause the program to crash or report to stderr.
-    printf("ThreadSanitizer warnings: 0\n");
+    printf("Total ticks: %d\n", read_global_tick());
+
+    //threadwarnings if they exist are printed by  TSan runtime library (libtsan.so.2) — the same library that's linked 
+    // to the binary when compiled with -fsanitize=thread.
 }
 
 void print_performance_metrics(int num_tx, Transaction* transactions) {
     int total_wait_ticks = 0;
-    int final_tick = global_tick; 
+    int final_tick = read_global_tick(); 
 
     printf("------------------------------------------------------------\n");
     printf("=== Transaction Performance Metrics ===\n");

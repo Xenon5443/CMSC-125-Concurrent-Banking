@@ -35,3 +35,11 @@ void wait_until_tick(int target_tick) {
     }
     pthread_mutex_unlock(&tick_lock);
 }
+
+// Thread-safe helper function to read the global tick
+int read_global_tick(void) {
+    pthread_mutex_lock(&tick_lock);
+    int t = global_tick;
+    pthread_mutex_unlock(&tick_lock);
+    return t;
+}

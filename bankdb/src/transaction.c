@@ -12,7 +12,7 @@ void* execute_transaction(void* arg) {
     // Wait until scheduled start time
     wait_until_tick(tx->start_tick);
     
-    tx->actual_start = global_tick;
+    tx->actual_start = read_global_tick();
     tx->wait_ticks += (tx->actual_start - tx->start_tick);
     
     for (int i = 0; i < tx->num_ops; i++) {
@@ -33,9 +33,9 @@ void* execute_transaction(void* arg) {
         //     load_account(&pool, op->account_id);
         // }
         
-        int tick_before = global_tick;
+        int tick_before = read_global_tick();
 
-        tx->actual_end = global_tick;
+        tx->actual_end = read_global_tick();
         
         switch (op->type) {
             case OP_DEPOSIT:
@@ -82,7 +82,7 @@ void* execute_transaction(void* arg) {
         //     unload_account(&pool, op->account_id);
         // }
         
-        tx->wait_ticks += (global_tick - tick_before);
+        tx->wait_ticks += (read_global_tick() - tick_before);
 
         // At the very end of the function
         printf("  T%d completed: %s successful\n", 
@@ -94,7 +94,7 @@ void* execute_transaction(void* arg) {
         );
     }
     
-    tx->actual_end = global_tick;
+    tx->actual_end = read_global_tick();
     tx->status = TX_COMMITTED;
 
     return NULL;
