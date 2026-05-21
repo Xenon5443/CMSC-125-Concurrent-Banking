@@ -104,7 +104,8 @@ Transaction* parse_transactions(const char* filename, int *num_transactions) {
     // int num_transactions = 0;
 
     // allocate memory for tx_array
-    Transaction* tx_array = malloc(sizeof(Transaction) * 1000);
+     int capacity = 1000; 
+    Transaction* tx_array = malloc(sizeof(Transaction) * capacity);
     if (!tx_array) {
         perror("Malloc failed");
         exit(EXIT_FAILURE);
@@ -160,4 +161,18 @@ Transaction* parse_transactions(const char* filename, int *num_transactions) {
 
 
     return tx_array; 
+}
+
+
+void init_all_account_locks() {
+    // Loop through the absolute max limits of the database capacity
+    for (int i = 0; i < MAX_ACCOUNTS; i++) {
+        int rc = pthread_rwlock_init(&bank.accounts[i].lock, NULL);
+        
+        if (rc != 0) {
+            fprintf(stderr, "Fatal Error: Failed to initialize rwlock for Account ID %d\n", i);
+            // Defensive engineering: crash early rather than running with broken locks
+            exit(1); 
+        }
+    }
 }

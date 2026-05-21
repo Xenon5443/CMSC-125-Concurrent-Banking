@@ -30,4 +30,6 @@ void parse_accounts(const char* filename);
  */
 Transaction* parse_transactions(const char* filename, int *num_transactions);
 
+void init_all_account_locks();
+
 #endif 
