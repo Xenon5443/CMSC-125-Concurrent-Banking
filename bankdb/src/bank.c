@@ -9,7 +9,6 @@ Bank bank;
 int wait_time = 100000; //needed for buffer testing, to ensure threads overlap
 
 int get_balance(int account_id) {
-    
     load_account(&pool, account_id);
     Account* acc = &bank.accounts[account_id];
     pthread_rwlock_rdlock(&acc->lock);

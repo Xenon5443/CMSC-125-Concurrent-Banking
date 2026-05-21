@@ -50,8 +50,6 @@ void load_account(BufferPool* pool, int account_id) {
     
     pthread_mutex_lock(&pool->pool_lock);
     
-    pthread_mutex_lock(&pool->pool_lock);
-    
     // Find empty slot and load account
     for (int i = 0; i < BUFFER_POOL_SIZE; i++) {
         if (!pool->slots[i].in_use) {
