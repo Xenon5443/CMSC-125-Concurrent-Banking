@@ -1,3 +1,4 @@
+#include <unistd.h>
 #include <stdbool.h>
 #include "bank.h"
 #include "lock_mgr.h"
