@@ -9,8 +9,11 @@
 #include "simulation.h"
 #include "buffer_pool.h"
 #include "metrics.h"
+#include <stdatomic.h>
 
-volatile bool simulation_running = true;
+
+// volatile bool simulation_running = true;
+atomic_bool simulation_running = true;
 
 int main(int argc, char *argv[]) {
     //declared struct for convenience of passing parameters and to avoid working with pointers
@@ -25,6 +28,9 @@ int main(int argc, char *argv[]) {
     int num_tx = 0;
     Transaction* my_transactions = parse_transactions(config.trace_file, &num_tx);
 
+    //init  TICK_INTERVAL_MS
+    TICK_INTERVAL_MS = config.tick_ms;
+
 
     // 2. Initialize Synchronization Tools
     pthread_mutex_init(&tick_lock, NULL);
@@ -32,6 +38,7 @@ int main(int argc, char *argv[]) {
 
     init_buffer_pool(&pool);
     init_pool_metrics(); //pool metrics structure
+    void init_all_account_locks();
     
     // 3. Launch the Timer in its OWN thread
     pthread_t timer_tid;
