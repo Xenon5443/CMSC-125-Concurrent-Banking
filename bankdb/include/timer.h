@@ -6,7 +6,7 @@
 
 extern volatile int global_tick;
 extern int TICK_INTERVAL_MS;
-extern bool simulation_running;
+extern volatile bool simulation_running;
 
 // Add these two lines:
 extern pthread_mutex_t tick_lock;

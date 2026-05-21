@@ -10,7 +10,7 @@
 #include "buffer_pool.h"
 #include "metrics.h"
 
-bool simulation_running = true;
+volatile bool simulation_running = true;
 
 int main(int argc, char *argv[]) {
     //declared struct for convenience of passing parameters and to avoid working with pointers
